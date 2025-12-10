@@ -6,7 +6,7 @@ from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
-from agent.data_collectors import WebScraper, APIClient, NewsAggregator
+from agent.data_collectors import WebScraper, APIClient, NewsAggregator, SeedFundingCollector
 from agent.processors import DataParser, DataValidator
 from agent.utils.logger import setup_logger
 from agent.utils.config import Config
@@ -22,6 +22,7 @@ class StartupResearchAgent:
         self.web_scraper = WebScraper()
         self.api_client = APIClient()
         self.news_aggregator = NewsAggregator()
+        self.seed_funding_collector = SeedFundingCollector()
         self.data_parser = DataParser()
         self.data_validator = DataValidator()
         
@@ -63,6 +64,34 @@ class StartupResearchAgent:
         logger.info(f"{'='*60}\n")
         
         return all_startups
+    
+    def research_seed_funding(
+        self,
+        max_results: int = 50,
+        generate_investor_report: bool = True
+    ) -> tuple:
+        """
+        Research seed funding rounds from crypto startups with investor-focused metrics.
+        
+        Returns:
+            tuple: (seed_funding_data, investor_report_data)
+        """
+        logger.info(f"\n{'='*60}")
+        logger.info("SEED FUNDING RESEARCH - CRYPTO STARTUPS")
+        logger.info(f"{'='*60}")
+        
+        seed_funding_data = self.seed_funding_collector.collect_seed_funding_data(max_results)
+        
+        logger.info(f"Collected {len(seed_funding_data)} seed funding rounds")
+        
+        investor_report = None
+        if generate_investor_report:
+            investor_report = self.seed_funding_collector.generate_investor_report(seed_funding_data)
+            logger.info("Investor-focused report generated successfully")
+        
+        logger.info(f"{'='*60}\n")
+        
+        return seed_funding_data, investor_report
     
     def _collect_category_data(self, category: str, max_results: int) -> List[Dict]:
         startups = []
@@ -130,6 +159,38 @@ class StartupResearchAgent:
         logger.info(f"Export complete: {output_path}")
         return str(output_path)
     
+    def export_seed_funding_results(
+        self,
+        seed_funding_data: List[Dict],
+        investor_report: Optional[Dict] = None,
+        format: str = 'json',
+        filename: Optional[str] = None
+    ) -> str:
+        """Export seed funding data and investor report"""
+        if not filename:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'seed_funding_{timestamp}'
+        
+        output_path = self.config.OUTPUT_DIR / f'{filename}.{format}'
+        
+        logger.info(f"Exporting seed funding data ({len(seed_funding_data)} rounds) to {output_path}")
+        
+        if format == 'json':
+            export_data = {
+                'seed_funding_rounds': seed_funding_data,
+                'investor_report': investor_report
+            }
+            self._export_json(export_data, output_path)
+        elif format == 'csv':
+            self._export_csv(seed_funding_data, output_path)
+        elif format == 'xlsx' or format == 'excel':
+            self._export_seed_funding_excel(seed_funding_data, investor_report, output_path.with_suffix('.xlsx'))
+        else:
+            raise ValueError(f"Unsupported format: {format}")
+        
+        logger.info(f"Export complete: {output_path}")
+        return str(output_path)
+    
     def _export_json(self, startups: List[Dict], path: Path):
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(startups, f, indent=2, ensure_ascii=False)
@@ -169,6 +230,60 @@ class StartupResearchAgent:
                         pass
                 adjusted_width = min(max_length + 2, 50)
                 worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    def _export_seed_funding_excel(self, seed_funding_data: List[Dict], investor_report: Optional[Dict], path: Path):
+        """Export seed funding data with investor report to Excel with multiple sheets"""
+        df_seed = pd.DataFrame(seed_funding_data)
+        
+        # Convert lists to strings for Excel
+        if 'investors' in df_seed.columns:
+            df_seed['investors'] = df_seed['investors'].apply(
+                lambda x: ', '.join(x) if isinstance(x, list) else x
+            )
+        
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            df_seed.to_excel(writer, sheet_name='Seed Funding Rounds', index=False)
+            
+            # Add investor report sheets if available
+            if investor_report:
+                summary = investor_report.get('summary', {})
+                df_summary = pd.DataFrame([summary])
+                df_summary.to_excel(writer, sheet_name='Summary', index=False)
+                
+                # Add investor insights
+                investors = investor_report.get('investor_insights', {}).get('most_active_investors', [])
+                if investors:
+                    df_investors = pd.DataFrame(investors)
+                    df_investors.to_excel(writer, sheet_name='Most Active Investors', index=False)
+                
+                # Add source analysis
+                source_analysis = investor_report.get('source_analysis', {})
+                if source_analysis:
+                    source_data = []
+                    for site, data in source_analysis.items():
+                        source_data.append({
+                            'Source Site': site,
+                            'Funding Rounds': data.get('funding_rounds', 0),
+                            'Total Funding': f"${data.get('total_funding', 0):,.0f}",
+                            'Unique Investors': len(data.get('unique_investors', []))
+                        })
+                    df_sources = pd.DataFrame(source_data)
+                    df_sources.to_excel(writer, sheet_name='Source Analysis', index=False)
+            
+            # Auto-adjust column widths
+            for sheet_name in writer.sheets:
+                worksheet = writer.sheets[sheet_name]
+                for column in worksheet.columns:
+                    max_length = 0
+                    column_letter = column[0].column_letter
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 50)
+                    worksheet.column_dimensions[column_letter].width = adjusted_width
     
     def generate_summary(self, startups: List[Dict]) -> Dict:
         logger.info("Generating summary statistics...")
@@ -266,5 +381,62 @@ class StartupResearchAgent:
             print("\nStartups by Country:")
             for country, count in sorted(summary['countries'].items(), key=lambda x: x[1], reverse=True)[:10]:
                 print(f"  - {country}: {count}")
+        
+        print("\n" + "="*80 + "\n")
+    
+    def print_seed_funding_summary(self, investor_report: Dict):
+        """Print investor-focused seed funding summary with site names"""
+        if not investor_report:
+            logger.warning("No investor report available")
+            return
+        
+        print("\n" + "="*80)
+        print("SEED FUNDING ANALYSIS - INVESTOR PERSPECTIVE")
+        print("="*80)
+        
+        summary = investor_report.get('summary', {})
+        print(f"\nTotal Seed Funding Raised: {summary.get('total_seed_funding_raised', 'N/A')}")
+        print(f"Average Seed Round Size: {summary.get('average_seed_round_size', 'N/A')}")
+        print(f"Total Seed Rounds Tracked: {summary.get('total_seed_rounds_tracked', 0)}")
+        print(f"Unique Investors Identified: {summary.get('unique_investors_identified', 0)}")
+        print(f"Average Investors per Round: {summary.get('average_investors_per_round', 0)}")
+        
+        # Most active investors
+        investors = investor_report.get('investor_insights', {}).get('most_active_investors', [])
+        if investors:
+            print("\nMost Active Investors (Top 10):")
+            for i, inv in enumerate(investors[:10], 1):
+                print(f"  {i}. {inv['investor']} - {inv['participation_count']} participations")
+        
+        # Lead investors
+        lead_investors = investor_report.get('investor_insights', {}).get('lead_investors', {})
+        if lead_investors:
+            print("\nLead Investors Summary:")
+            for investor, data in sorted(lead_investors.items(), key=lambda x: x[1]['investments'], reverse=True)[:10]:
+                print(f"  - {investor}: {data['investments']} investments, Total: ${data['total_invested']:,.0f}, Avg: ${data['average_investment']:,.0f}")
+        
+        # Source analysis with site names
+        source_analysis = investor_report.get('source_analysis', {})
+        if source_analysis:
+            print("\nFunding Data Sources (Site Names):")
+            for site, data in sorted(source_analysis.items(), key=lambda x: x[1]['total_funding'], reverse=True):
+                print(f"  - {site}:")
+                print(f"      Funding Rounds: {data['funding_rounds']}")
+                print(f"      Total Funding: ${data['total_funding']:,.0f}")
+                print(f"      Unique Investors: {len(data['unique_investors'])}")
+        
+        # Industry breakdown
+        industry = investor_report.get('industry_breakdown', {})
+        if industry:
+            print("\nIndustry Breakdown:")
+            for ind, count in sorted(industry.items(), key=lambda x: x[1], reverse=True):
+                print(f"  - {ind}: {count} startups")
+        
+        # Geographic distribution
+        geography = investor_report.get('geographic_distribution', {})
+        if geography:
+            print("\nGeographic Distribution (Top 10):")
+            for location, count in sorted(geography.items(), key=lambda x: x[1], reverse=True)[:10]:
+                print(f"  - {location}: {count} startups")
         
         print("\n" + "="*80 + "\n")
