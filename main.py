@@ -15,6 +15,12 @@ def parse_arguments():
     )
     
     parser.add_argument(
+        '--seed-funding',
+        action='store_true',
+        help='Research seed funding from crypto startups with investor metrics'
+    )
+    
+    parser.add_argument(
         '--categories',
         nargs='+',
         default=['blockchain', 'crypto', 'web3', 'ai', 'defi', 'nft'],
@@ -71,6 +77,36 @@ def main():
         logger.info("Initializing AI Startup Research Agent...")
         agent = StartupResearchAgent()
         
+        # Handle seed funding research mode
+        if args.seed_funding:
+            logger.info("Seed Funding Research Mode enabled")
+            seed_funding_data, investor_report = agent.research_seed_funding(
+                max_results=args.max_results,
+                generate_investor_report=True
+            )
+            
+            if not seed_funding_data:
+                logger.warning("No seed funding data found")
+                return 1
+            
+            agent.print_seed_funding_summary(investor_report)
+            
+            if not args.summary_only:
+                formats = ['json', 'csv', 'xlsx'] if args.output_format == 'all' else [args.output_format]
+                
+                for fmt in formats:
+                    output_path = agent.export_seed_funding_results(
+                        seed_funding_data,
+                        investor_report=investor_report,
+                        format=fmt,
+                        filename=args.output_filename
+                    )
+                    print(f"✓ Exported {fmt.upper()}: {output_path}")
+            
+            print(f"\n✓ Seed funding research complete! Collected data on {len(seed_funding_data)} funding rounds")
+            return 0
+        
+        # Regular startup research mode
         logger.info(f"Starting research for categories: {', '.join(args.categories)}")
         
         startups = agent.research_startups(
