@@ -36,7 +36,7 @@ def parse_arguments():
     
     parser.add_argument(
         '--output-format',
-        choices=['json', 'csv', 'xlsx', 'all'],
+        choices=['json', 'csv', 'xlsx', 'txt', 'all'],
         default='all',
         help='Output format (default: all)'
     )
@@ -92,7 +92,7 @@ def main():
             agent.print_seed_funding_summary(investor_report)
             
             if not args.summary_only:
-                formats = ['json', 'csv', 'xlsx'] if args.output_format == 'all' else [args.output_format]
+                formats = ['json', 'csv', 'xlsx', 'txt'] if args.output_format == 'all' else [args.output_format]
                 
                 for fmt in formats:
                     output_path = agent.export_seed_funding_results(
@@ -122,7 +122,7 @@ def main():
         agent.print_summary(startups)
         
         if not args.summary_only:
-            formats = ['json', 'csv', 'xlsx'] if args.output_format == 'all' else [args.output_format]
+            formats = ['json', 'csv', 'xlsx', 'txt'] if args.output_format == 'all' else [args.output_format]
             
             for fmt in formats:
                 output_path = agent.export_results(

@@ -8,8 +8,10 @@ An intelligent agent that researches and collects data on blockchain, cryptocurr
 - 💰 Funding information collection (rounds, amounts, investors)
 - 📊 Key metrics tracking (valuation, employee count, founding date, etc.)
 - 🤖 AI-powered data extraction and analysis
-- 📁 Multiple export formats (JSON, CSV, Excel)
+- 📁 Multiple export formats (JSON, CSV, Excel, TXT)
+- 📋 Human-readable text format for easy copy & paste
 - 🔄 Configurable data sources and search parameters
+- 💼 Seed funding research with investor-focused analytics
 
 ## Key Metrics Collected
 
@@ -65,9 +67,15 @@ python main.py --categories blockchain crypto web3
 
 # Run with custom output format
 python main.py --output-format json
+python main.py --output-format txt  # Text format for easy copy & paste
+python main.py --output-format all  # All formats (JSON, CSV, Excel, TXT)
 
 # Run with maximum results limit
 python main.py --max-results 100
+
+# Seed funding research mode
+python main.py --seed-funding --max-results 50
+python main.py --seed-funding --output-format txt  # Text format for investor reports
 ```
 
 ### Programmatic Usage
@@ -91,9 +99,19 @@ agent.export_results(results, format='csv', filename='startups.csv')
 ## Output
 
 Results are saved in the `output/` directory:
-- `startups_YYYYMMDD_HHMMSS.json` - JSON format
-- `startups_YYYYMMDD_HHMMSS.csv` - CSV format
-- `startups_YYYYMMDD_HHMMSS.xlsx` - Excel format
+- `startups_YYYYMMDD_HHMMSS.json` - JSON format (structured data)
+- `startups_YYYYMMDD_HHMMSS.csv` - CSV format (spreadsheet compatible)
+- `startups_YYYYMMDD_HHMMSS.xlsx` - Excel format (multi-sheet workbook)
+- `startups_YYYYMMDD_HHMMSS.txt` - Text format (human-readable, easy to copy & paste)
+
+### Text Format Benefits
+
+The text (TXT) format provides:
+- **Human-readable output** - Easy to read and understand
+- **Copy & paste friendly** - Perfect for emails, documents, and reports
+- **No special software required** - Open with any text editor
+- **Investor-focused reports** - Seed funding mode includes detailed investor analytics
+- **Clean formatting** - Well-structured with clear sections and separators
 
 ## Project Structure
 

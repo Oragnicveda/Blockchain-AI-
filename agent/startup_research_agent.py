@@ -153,6 +153,8 @@ class StartupResearchAgent:
             self._export_csv(startups, output_path)
         elif format == 'xlsx' or format == 'excel':
             self._export_excel(startups, output_path.with_suffix('.xlsx'))
+        elif format == 'txt' or format == 'text':
+            self._export_txt(startups, output_path.with_suffix('.txt'))
         else:
             raise ValueError(f"Unsupported format: {format}")
         
@@ -185,6 +187,8 @@ class StartupResearchAgent:
             self._export_csv(seed_funding_data, output_path)
         elif format == 'xlsx' or format == 'excel':
             self._export_seed_funding_excel(seed_funding_data, investor_report, output_path.with_suffix('.xlsx'))
+        elif format == 'txt' or format == 'text':
+            self._export_seed_funding_txt(seed_funding_data, investor_report, output_path.with_suffix('.txt'))
         else:
             raise ValueError(f"Unsupported format: {format}")
         
@@ -230,6 +234,61 @@ class StartupResearchAgent:
                         pass
                 adjusted_width = min(max_length + 2, 50)
                 worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    def _export_txt(self, startups: List[Dict], path: Path):
+        """Export startups data in human-readable text format"""
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write("STARTUP RESEARCH RESULTS\n")
+            f.write("=" * 80 + "\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Total Startups: {len(startups)}\n")
+            f.write("=" * 80 + "\n\n")
+            
+            for idx, startup in enumerate(startups, 1):
+                f.write(f"\n{'#' * 80}\n")
+                f.write(f"STARTUP #{idx}\n")
+                f.write(f"{'#' * 80}\n\n")
+                
+                f.write(f"Name: {startup.get('name', 'N/A')}\n")
+                f.write(f"Category: {startup.get('category', 'N/A')}\n")
+                f.write(f"Description: {startup.get('description', 'N/A')}\n")
+                f.write(f"\nFunding Information:\n")
+                f.write(f"  Funding Amount: {startup.get('funding_amount', 'N/A')}\n")
+                f.write(f"  Funding Round: {startup.get('funding_round', 'N/A')}\n")
+                f.write(f"  Valuation: {startup.get('valuation', 'N/A')}\n")
+                f.write(f"  Date: {startup.get('funding_date', 'N/A')}\n")
+                
+                investors = startup.get('investors', [])
+                if investors and isinstance(investors, list):
+                    f.write(f"\nInvestors ({len(investors)}):\n")
+                    for inv in investors:
+                        f.write(f"  - {inv}\n")
+                elif investors:
+                    f.write(f"\nInvestors: {investors}\n")
+                
+                f.write(f"\nCompany Details:\n")
+                f.write(f"  Website: {startup.get('website', 'N/A')}\n")
+                f.write(f"  Headquarters: {startup.get('headquarters', 'N/A')}\n")
+                f.write(f"  Founded: {startup.get('founded_date', 'N/A')}\n")
+                f.write(f"  Employees: {startup.get('num_employees', 'N/A')}\n")
+                
+                founders = startup.get('founders', [])
+                if founders and isinstance(founders, list):
+                    f.write(f"\nFounders:\n")
+                    for founder in founders:
+                        f.write(f"  - {founder}\n")
+                elif founders:
+                    f.write(f"\nFounders: {founders}\n")
+                
+                if startup.get('source_url'):
+                    f.write(f"\nSource: {startup.get('source_url')}\n")
+                
+                f.write("\n")
+            
+            f.write("\n" + "=" * 80 + "\n")
+            f.write("END OF REPORT\n")
+            f.write("=" * 80 + "\n")
     
     def _export_seed_funding_excel(self, seed_funding_data: List[Dict], investor_report: Optional[Dict], path: Path):
         """Export seed funding data with investor report to Excel with multiple sheets"""
@@ -284,6 +343,130 @@ class StartupResearchAgent:
                             pass
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    def _export_seed_funding_txt(self, seed_funding_data: List[Dict], investor_report: Optional[Dict], path: Path):
+        """Export seed funding data and investor report in human-readable text format"""
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write("SEED FUNDING ANALYSIS - INVESTOR-FOCUSED REPORT\n")
+            f.write("=" * 80 + "\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 80 + "\n\n")
+            
+            if investor_report:
+                summary = investor_report.get('summary', {})
+                f.write("EXECUTIVE SUMMARY\n")
+                f.write("-" * 80 + "\n")
+                f.write(f"Total Seed Funding Raised: {summary.get('total_seed_funding_raised', 'N/A')}\n")
+                f.write(f"Average Seed Round Size: {summary.get('average_seed_round_size', 'N/A')}\n")
+                f.write(f"Total Seed Rounds Tracked: {summary.get('total_seed_rounds_tracked', 0)}\n")
+                f.write(f"Unique Investors Identified: {summary.get('unique_investors_identified', 0)}\n")
+                f.write(f"Average Investors per Round: {summary.get('average_investors_per_round', 0):.1f}\n")
+                f.write("\n")
+                
+                investors = investor_report.get('investor_insights', {}).get('most_active_investors', [])
+                if investors:
+                    f.write("MOST ACTIVE INVESTORS (TOP 20)\n")
+                    f.write("-" * 80 + "\n")
+                    for i, inv in enumerate(investors[:20], 1):
+                        f.write(f"{i:2d}. {inv['investor']:<50} {inv['participation_count']} participations\n")
+                    f.write("\n")
+                
+                lead_investors = investor_report.get('investor_insights', {}).get('lead_investors', {})
+                if lead_investors:
+                    f.write("LEAD INVESTORS SUMMARY\n")
+                    f.write("-" * 80 + "\n")
+                    sorted_leads = sorted(lead_investors.items(), key=lambda x: x[1]['investments'], reverse=True)[:15]
+                    for investor, data in sorted_leads:
+                        f.write(f"\nInvestor: {investor}\n")
+                        f.write(f"  Investments: {data['investments']}\n")
+                        f.write(f"  Total Invested: ${data['total_invested']:,.0f}\n")
+                        f.write(f"  Average Investment: ${data['average_investment']:,.0f}\n")
+                    f.write("\n")
+                
+                source_analysis = investor_report.get('source_analysis', {})
+                if source_analysis:
+                    f.write("FUNDING DATA SOURCES\n")
+                    f.write("-" * 80 + "\n")
+                    for site, data in sorted(source_analysis.items(), key=lambda x: x[1]['total_funding'], reverse=True):
+                        f.write(f"\nSource: {site}\n")
+                        f.write(f"  Funding Rounds: {data['funding_rounds']}\n")
+                        f.write(f"  Total Funding: ${data['total_funding']:,.0f}\n")
+                        f.write(f"  Unique Investors: {len(data['unique_investors'])}\n")
+                        if data['unique_investors']:
+                            f.write(f"  Top Investors: {', '.join(list(data['unique_investors'])[:5])}\n")
+                    f.write("\n")
+                
+                industry = investor_report.get('industry_breakdown', {})
+                if industry:
+                    f.write("INDUSTRY BREAKDOWN\n")
+                    f.write("-" * 80 + "\n")
+                    for ind, count in sorted(industry.items(), key=lambda x: x[1], reverse=True):
+                        f.write(f"  {ind:<40} {count} startups\n")
+                    f.write("\n")
+                
+                geography = investor_report.get('geographic_distribution', {})
+                if geography:
+                    f.write("GEOGRAPHIC DISTRIBUTION\n")
+                    f.write("-" * 80 + "\n")
+                    for location, count in sorted(geography.items(), key=lambda x: x[1], reverse=True)[:15]:
+                        f.write(f"  {location:<40} {count} startups\n")
+                    f.write("\n")
+            
+            f.write("\n" + "=" * 80 + "\n")
+            f.write("DETAILED SEED FUNDING ROUNDS\n")
+            f.write("=" * 80 + "\n\n")
+            
+            for idx, funding_round in enumerate(seed_funding_data, 1):
+                f.write(f"\n{'#' * 80}\n")
+                f.write(f"FUNDING ROUND #{idx}\n")
+                f.write(f"{'#' * 80}\n\n")
+                
+                f.write(f"Startup: {funding_round.get('startup_name', 'N/A')}\n")
+                f.write(f"Industry: {funding_round.get('industry', 'N/A')}\n")
+                f.write(f"Headquarters: {funding_round.get('headquarters', 'N/A')}\n")
+                f.write(f"Description: {funding_round.get('description', 'N/A')}\n")
+                
+                f.write(f"\nFunding Details:\n")
+                funding_amount = funding_round.get('funding_amount', 0)
+                if isinstance(funding_amount, (int, float)):
+                    f.write(f"  Amount: ${funding_amount:,.0f}\n")
+                else:
+                    f.write(f"  Amount: {funding_amount}\n")
+                f.write(f"  Round: {funding_round.get('funding_round', 'N/A')}\n")
+                f.write(f"  Announcement Date: {funding_round.get('announcement_date', 'N/A')}\n")
+                f.write(f"  Timeline: {funding_round.get('funding_timeline', 'N/A')}\n")
+                
+                investors = funding_round.get('investors', [])
+                num_investors = funding_round.get('num_investors', 0)
+                lead_investor = funding_round.get('lead_investor', 'N/A')
+                
+                f.write(f"\nInvestor Information:\n")
+                f.write(f"  Total Investors: {num_investors}\n")
+                f.write(f"  Lead Investor: {lead_investor}\n")
+                f.write(f"  Investor Type: {funding_round.get('investor_type', 'N/A')}\n")
+                avg_investment = funding_round.get('average_investment_per_investor', 0)
+                if isinstance(avg_investment, (int, float)):
+                    f.write(f"  Average Investment per Investor: ${avg_investment:,.0f}\n")
+                else:
+                    f.write(f"  Average Investment per Investor: {avg_investment}\n")
+                
+                if investors and isinstance(investors, list):
+                    f.write(f"\n  All Investors ({len(investors)}):\n")
+                    for inv in investors:
+                        f.write(f"    - {inv}\n")
+                elif investors:
+                    f.write(f"\n  Investors: {investors}\n")
+                
+                f.write(f"\nData Source:\n")
+                f.write(f"  Site: {funding_round.get('source_site', 'N/A')}\n")
+                f.write(f"  URL: {funding_round.get('source_url', 'N/A')}\n")
+                
+                f.write("\n")
+            
+            f.write("\n" + "=" * 80 + "\n")
+            f.write("END OF SEED FUNDING REPORT\n")
+            f.write("=" * 80 + "\n")
     
     def generate_summary(self, startups: List[Dict]) -> Dict:
         logger.info("Generating summary statistics...")

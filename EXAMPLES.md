@@ -1,228 +1,238 @@
-# Usage Examples
+# Output Format Examples
 
-## Basic Examples
+This document shows examples of the different output formats available in the AI Startup Research Agent.
 
-### 1. Research All Categories
+## Text Format (.txt)
 
-```bash
-python main.py
-```
+The text format provides human-readable output that's perfect for copying and pasting into emails, documents, and reports.
 
-This will research all default categories (blockchain, crypto, web3, ai, defi, nft) and export results in all formats.
-
-### 2. Research Specific Categories
-
-```bash
-python main.py --categories blockchain crypto
-```
-
-Research only blockchain and crypto startups.
-
-### 3. Limit Results
-
-```bash
-python main.py --max-results 20
-```
-
-Limit to 20 results per category.
-
-### 4. Custom Output Format
-
-```bash
-# JSON only
-python main.py --output-format json
-
-# CSV only
-python main.py --output-format csv
-
-# Excel only
-python main.py --output-format xlsx
-```
-
-### 5. Custom Filename
-
-```bash
-python main.py --output-filename my_research_2024
-```
-
-### 6. Summary Only (No Export)
-
-```bash
-python main.py --summary-only
-```
-
-Just print the summary statistics without exporting files.
-
-### 7. Skip News Aggregation
-
-```bash
-python main.py --no-news
-```
-
-## Advanced Examples
-
-### Research Web3 and AI with Limited Results
-
-```bash
-python main.py --categories web3 ai --max-results 30 --output-format xlsx
-```
-
-### Quick Summary of Blockchain Startups
-
-```bash
-python main.py --categories blockchain --summary-only --no-news
-```
-
-## Programmatic Usage
-
-### Basic Usage
-
-```python
-from agent import StartupResearchAgent
-
-# Initialize agent
-agent = StartupResearchAgent()
-
-# Research startups
-results = agent.research_startups(
-    categories=['blockchain', 'crypto'],
-    max_results=50
-)
-
-# Print summary
-agent.print_summary(results)
-
-# Export to JSON
-agent.export_results(results, format='json', filename='my_results')
-```
-
-### Advanced Usage with Custom Processing
-
-```python
-from agent import StartupResearchAgent
-
-agent = StartupResearchAgent()
-
-# Research all categories
-all_startups = agent.research_startups()
-
-# Filter high-value startups
-high_value = [
-    s for s in all_startups 
-    if s.get('valuation') and 'B' in s['valuation']
-]
-
-# Export filtered results
-agent.export_results(high_value, format='xlsx', filename='unicorns')
-
-# Generate and display summary
-summary = agent.generate_summary(high_value)
-print(f"Found {summary['total_startups']} unicorn startups")
-```
-
-### Batch Processing Multiple Searches
-
-```python
-from agent import StartupResearchAgent
-
-agent = StartupResearchAgent()
-
-categories_groups = [
-    ['blockchain', 'crypto'],
-    ['web3', 'nft'],
-    ['ai', 'defi']
-]
-
-for group in categories_groups:
-    results = agent.research_startups(categories=group, max_results=25)
-    filename = f"{'_'.join(group)}_startups"
-    agent.export_results(results, format='json', filename=filename)
-    print(f"Exported {len(results)} startups for {group}")
-```
-
-### Custom Data Processing
-
-```python
-from agent import StartupResearchAgent
-from agent.processors import DataParser
-
-agent = StartupResearchAgent()
-results = agent.research_startups()
-
-# Calculate total funding by category
-funding_by_category = {}
-parser = DataParser()
-
-for startup in results:
-    category = startup.get('category', 'Unknown')
-    funding_str = startup.get('funding_amount', '$0')
-    funding_value = parser.parse_funding_amount(funding_str) or 0
-    
-    if category not in funding_by_category:
-        funding_by_category[category] = 0
-    funding_by_category[category] += funding_value
-
-# Print results
-for category, total in sorted(funding_by_category.items(), key=lambda x: x[1], reverse=True):
-    print(f"{category}: ${total:,.0f}")
-```
-
-## Output Examples
-
-### JSON Output
-
-```json
-[
-  {
-    "name": "Chainalysis",
-    "description": "Blockchain data platform providing investigation and compliance tools",
-    "category": "Blockchain",
-    "funding_amount": "$366M",
-    "funding_round": "Series F",
-    "investors": ["Coatue", "Addition", "Ribbit Capital"],
-    "valuation": "$8.6B",
-    "founded_date": "2014",
-    "employee_count": "800+",
-    "headquarters": "New York, USA",
-    "website": "https://www.chainalysis.com",
-    "last_funding_date": "2022-05-10"
-  }
-]
-```
-
-### CSV Output
-
-Headers: name, description, category, funding_amount, funding_round, investors, valuation, founded_date, employee_count, headquarters, website, last_funding_date
-
-### Summary Output
+### Regular Startup Research Example
 
 ```
 ================================================================================
-STARTUP RESEARCH SUMMARY
+STARTUP RESEARCH RESULTS
+================================================================================
+Generated: 2025-12-10 21:36:59
+Total Startups: 2
 ================================================================================
 
-Total Startups: 25
 
-Startups by Category:
-  - Blockchain: 8
-  - Crypto: 7
-  - Web3: 6
-  - AI Web3: 4
+################################################################################
+STARTUP #1
+################################################################################
 
-Total Funding Collected: $4,823,000,000
-Average Funding per Startup: $192,920,000
+Name: Chainalysis
+Category: Blockchain
+Description: Blockchain data platform providing investigation and compliance tools
 
-Top 10 Funded Startups:
-  1. Blockchain.com - $620M (Valuation: $14B)
-  2. Dapper Labs - $605M (Valuation: $7.6B)
-  3. Fireblocks - $550M (Valuation: $8B)
-  ...
+Funding Information:
+  Funding Amount: $366M
+  Funding Round: Series F
+  Valuation: $8.6B
+  Date: N/A
 
-Top 10 Active Investors:
-  1. a16z - 5 investments
-  2. Coatue - 4 investments
-  3. Sequoia Capital - 3 investments
-  ...
+Investors (3):
+  - Coatue
+  - Addition
+  - Ribbit Capital
 
+Company Details:
+  Website: https://www.chainalysis.com
+  Headquarters: New York, USA
+  Founded: 2014
+  Employees: N/A
+
+
+################################################################################
+STARTUP #2
+################################################################################
+
+Name: Alchemy
+Category: Blockchain
+Description: Blockchain developer platform powering millions of users
+
+Funding Information:
+  Funding Amount: $200M
+  Funding Round: Series C1
+  Valuation: $10.2B
+  Date: N/A
+
+Investors (3):
+  - Lightspeed
+  - Silver Lake
+  - a16z
+
+Company Details:
+  Website: https://www.alchemy.com
+  Headquarters: San Francisco, USA
+  Founded: 2017
+  Employees: N/A
+
+
+================================================================================
+END OF REPORT
 ================================================================================
 ```
+
+### Seed Funding Research Example
+
+```
+================================================================================
+SEED FUNDING ANALYSIS - INVESTOR-FOCUSED REPORT
+================================================================================
+Generated: 2025-12-10 21:37:26
+================================================================================
+
+EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Total Seed Funding Raised: $47,000,000
+Average Seed Round Size: $23,500,000
+Total Seed Rounds Tracked: 2
+Unique Investors Identified: 6
+Average Investors per Round: 3.0
+
+MOST ACTIVE INVESTORS (TOP 20)
+--------------------------------------------------------------------------------
+ 1. Animoca Brands                                     1 participations
+ 2. Dragonfly Capital                                  1 participations
+ 3. Khaled Vosti                                       1 participations
+ 4. Electric Capital                                   1 participations
+ 5. Sequoia Capital                                    1 participations
+ 6. Paradigm                                           1 participations
+
+LEAD INVESTORS SUMMARY
+--------------------------------------------------------------------------------
+
+Investor: Animoca Brands
+  Investments: 1
+  Total Invested: $20,000,000
+  Average Investment: $20,000,000
+
+Investor: Electric Capital
+  Investments: 1
+  Total Invested: $27,000,000
+  Average Investment: $27,000,000
+
+FUNDING DATA SOURCES
+--------------------------------------------------------------------------------
+
+Source: Crunchbase
+  Funding Rounds: 2
+  Total Funding: $47,000,000
+  Unique Investors: 6
+  Top Investors: Dragonfly Capital, Sequoia Capital, Khaled Vosti, Animoca Brands, Paradigm
+
+INDUSTRY BREAKDOWN
+--------------------------------------------------------------------------------
+  Blockchain                               1 startups
+  NFT/Web3                                 1 startups
+
+GEOGRAPHIC DISTRIBUTION
+--------------------------------------------------------------------------------
+  San Francisco, USA                       2 startups
+
+
+================================================================================
+DETAILED SEED FUNDING ROUNDS
+================================================================================
+
+
+################################################################################
+FUNDING ROUND #1
+################################################################################
+
+Startup: Helium Foundation
+Industry: Blockchain
+Headquarters: San Francisco, USA
+Description: Decentralized wireless network for IoT devices
+
+Funding Details:
+  Amount: $20M
+  Round: Seed
+  Announcement Date: 2023-06-15
+  Timeline: Early Stage
+
+Investor Information:
+  Total Investors: 3
+  Lead Investor: Animoca Brands
+  Investor Type: ['VC Firms', 'Angel Investors']
+  Average Investment per Investor: $6.67M
+
+  All Investors (3):
+    - Animoca Brands
+    - Dragonfly Capital
+    - Khaled Vosti
+
+Data Source:
+  Site: Crunchbase
+  URL: https://www.crunchbase.com/organization/helium
+
+
+================================================================================
+END OF SEED FUNDING REPORT
+================================================================================
+```
+
+## Usage Commands
+
+### Export to Text Format Only
+
+```bash
+# Regular startup research
+python main.py --categories blockchain --max-results 10 --output-format txt
+
+# Seed funding research
+python main.py --seed-funding --max-results 10 --output-format txt
+```
+
+### Export to All Formats (JSON, CSV, Excel, Text)
+
+```bash
+# Regular startup research
+python main.py --categories blockchain crypto --output-format all
+
+# Seed funding research
+python main.py --seed-funding --output-format all
+```
+
+### View Summary Only (No Export)
+
+```bash
+# Regular startup research
+python main.py --categories blockchain --summary-only
+
+# Seed funding research
+python main.py --seed-funding --summary-only
+```
+
+## Benefits of Text Format
+
+1. **Copy & Paste Ready** - Easy to copy sections and paste into:
+   - Email messages
+   - Reports and documents
+   - Presentations
+   - Slack/Teams messages
+   - Internal wikis
+
+2. **No Special Software** - Opens in any text editor:
+   - Notepad (Windows)
+   - TextEdit (Mac)
+   - vim/nano (Linux)
+   - VS Code, Sublime Text, etc.
+
+3. **Human Readable** - Clean formatting with:
+   - 80-character width for easy reading
+   - Clear section headers
+   - Consistent indentation
+   - Logical grouping of information
+
+4. **Professional Layout** - Well-structured with:
+   - Executive summaries
+   - Investor insights
+   - Detailed company information
+   - Source attribution
+
+5. **Search Friendly** - Easy to search with:
+   - Standard text search (Ctrl+F / Cmd+F)
+   - grep/find commands
+   - Terminal searching

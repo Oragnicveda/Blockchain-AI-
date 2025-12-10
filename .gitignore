@@ -43,6 +43,7 @@ output/
 *.csv
 *.json
 *.xlsx
+*.txt
 !.gitkeep
 
 # Logs
