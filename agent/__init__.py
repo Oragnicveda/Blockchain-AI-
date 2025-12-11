@@ -1,4 +1,6 @@
 from agent.startup_research_agent import StartupResearchAgent
+from agent.dqda.dqda_agent import DQDAAgent
+from agent.dqda.reporting import DQDAReportExporter
 from agent.dqda.data_collectors.base_collector import BaseCollector
 from agent.dqda.data_collectors.pitch_deck_parser import PitchDeckParser
 from agent.dqda.data_collectors.whitepaper_processor import WhitepaperProcessor
@@ -8,6 +10,8 @@ from agent.dqda.data_collectors.founder_background_collector import FounderBackg
 
 __all__ = [
     'StartupResearchAgent',
+    'DQDAAgent',
+    'DQDAReportExporter',
     'BaseCollector',
     'PitchDeckParser',
     'WhitepaperProcessor',

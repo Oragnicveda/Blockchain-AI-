@@ -70,6 +70,39 @@ python main.py --output-format json
 python main.py --max-results 100
 ```
 
+### DQDA Due Diligence CLI
+
+Run a single-startup due diligence pipeline that produces a consolidated scoring dashboard.
+
+```bash
+# Full DQDA pipeline + export dashboard (JSON/CSV/XLSX)
+python main.py \
+  --dqda \
+  --startup-name "TestTech" \
+  --keywords blockchain defi \
+  --website-url https://testtech.example.com \
+  --output-format all
+
+# Print only the multi-metric summary (no files)
+python main.py --dqda --startup-name "TestTech" --summary-only
+```
+
+Required environment variables: none.
+
+Optional environment variables (recommended for better data collection / performance tuning):
+
+```bash
+# Optional API keys
+OPENAI_API_KEY=...
+CRUNCHBASE_API_KEY=...
+NEWS_API_KEY=...
+
+# Runtime configuration
+MAX_WORKERS=5
+REQUEST_TIMEOUT=30
+RATE_LIMIT_DELAY=1
+```
+
 ### Programmatic Usage
 
 ```python
@@ -90,10 +123,17 @@ agent.export_results(results, format='csv', filename='startups.csv')
 
 ## Output
 
-Results are saved in the `output/` directory:
+Results are saved in the `output/` directory.
+
+Startup research mode:
 - `startups_YYYYMMDD_HHMMSS.json` - JSON format
 - `startups_YYYYMMDD_HHMMSS.csv` - CSV format
 - `startups_YYYYMMDD_HHMMSS.xlsx` - Excel format
+
+DQDA mode:
+- `dqda_<StartupName>_YYYYMMDD_HHMMSS.json` - Full DQDA report + inputs + scores
+- `dqda_<StartupName>_YYYYMMDD_HHMMSS.csv` - Single-row scoring dashboard
+- `dqda_<StartupName>_YYYYMMDD_HHMMSS.xlsx` - Dashboard (and DataPoints sheet when available)
 
 ## Project Structure
 
