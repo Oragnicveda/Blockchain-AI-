@@ -74,18 +74,29 @@ class PitchDeckParser(BaseCollector):
             keywords: List of keywords for search
             max_results: Maximum number of results
             pdf_urls: Optional list of direct PDF URLs
+            pitch_deck_path: Optional local path to pitch deck
             search_domains: Optional list of domains to search
         """
         startup_name = kwargs.get('startup_name', '')
         keywords = kwargs.get('keywords', [])
         max_results = kwargs.get('max_results', 5)
         pdf_urls = kwargs.get('pdf_urls', [])
+        pitch_deck_path = kwargs.get('pitch_deck_path')
         
         results = []
         
+        # Process local file if provided
+        if pitch_deck_path:
+            if os.path.exists(pitch_deck_path):
+                data = await self._extract_from_file(pitch_deck_path, startup_name, keywords)
+                if data:
+                    results.append(data)
+            else:
+                logger.warning(f"Pitch deck file not found: {pitch_deck_path}")
+        
         # Process provided PDF URLs first
-        if pdf_urls:
-            for url in pdf_urls[:max_results]:
+        if pdf_urls and len(results) < max_results:
+            for url in pdf_urls[:max_results - len(results)]:
                 data = await self._extract_from_url(url, startup_name, keywords)
                 if data:
                     results.append(data)
@@ -103,6 +114,52 @@ class PitchDeckParser(BaseCollector):
                         break
         
         return results
+
+    async def _extract_from_file(self, file_path: str, startup_name: str, keywords: List[str]) -> Optional[Dict[str, Any]]:
+        """
+        Extract pitch deck data from a local PDF file.
+        
+        Args:
+            file_path: Path to the PDF file
+            startup_name: Name of the startup
+            keywords: Search keywords
+            
+        Returns:
+            Raw data dictionary or None if extraction fails
+        """
+        try:
+            logger.info(f"Extracting pitch deck from file: {file_path}")
+            
+            # Read PDF file
+            try:
+                with open(file_path, 'rb') as f:
+                    pdf_content = f.read()
+            except Exception as e:
+                logger.error(f"Error reading file {file_path}: {str(e)}")
+                return None
+            
+            # Extract text and metadata
+            extraction_result = await self._extract_pdf_content(pdf_content)
+            if not extraction_result:
+                return None
+            
+            # Enhance with pitch deck specific analysis
+            enhanced_result = self._analyze_pitch_deck_content(extraction_result, startup_name)
+            
+            return {
+                'url': f"file://{os.path.abspath(file_path)}",
+                'content': enhanced_result['text'],
+                'metadata': enhanced_result['metadata'],
+                'sections': enhanced_result['sections'],
+                'quality_indicators': enhanced_result['quality_indicators'],
+                'collection_method': 'local_file_extraction',
+                'startup_name': startup_name,
+                'search_keywords': keywords
+            }
+            
+        except Exception as e:
+            logger.error(f"Error extracting PDF from file {file_path}: {str(e)}")
+            return None
     
     async def _extract_from_url(self, url: str, startup_name: str, keywords: List[str]) -> Optional[Dict[str, Any]]:
         """

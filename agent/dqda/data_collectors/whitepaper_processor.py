@@ -12,6 +12,7 @@ Processes whitepapers with:
 import asyncio
 import io
 import re
+import os
 from typing import Dict, List, Optional, Any, Tuple
 from urllib.parse import urlparse
 
@@ -83,19 +84,30 @@ class WhitepaperProcessor(BaseCollector):
             keywords: List of keywords for search
             max_results: Maximum number of results
             whitepaper_urls: Optional list of direct whitepaper URLs
+            whitepaper_path: Optional local path to whitepaper
             document_formats: Optional list of formats to accept ('pdf', 'html', 'txt')
         """
         startup_name = kwargs.get('startup_name', '')
         keywords = kwargs.get('keywords', [])
         max_results = kwargs.get('max_results', 5)
         whitepaper_urls = kwargs.get('whitepaper_urls', [])
+        whitepaper_path = kwargs.get('whitepaper_path')
         document_formats = kwargs.get('document_formats', ['pdf', 'html', 'txt'])
         
         results = []
         
+        # Process local file if provided
+        if whitepaper_path:
+            if os.path.exists(whitepaper_path):
+                data = await self._process_whitepaper_file(whitepaper_path, startup_name, keywords, document_formats)
+                if data:
+                    results.append(data)
+            else:
+                logger.warning(f"Whitepaper file not found: {whitepaper_path}")
+
         # Process provided whitepaper URLs
-        if whitepaper_urls:
-            for url in whitepaper_urls[:max_results]:
+        if whitepaper_urls and len(results) < max_results:
+            for url in whitepaper_urls[:max_results - len(results)]:
                 data = await self._process_whitepaper_url(url, startup_name, keywords, document_formats)
                 if data:
                     results.append(data)
@@ -114,6 +126,70 @@ class WhitepaperProcessor(BaseCollector):
         
         return results
     
+    async def _process_whitepaper_file(self, file_path: str, startup_name: str, keywords: List[str], formats: List[str]) -> Optional[Dict[str, Any]]:
+        """
+        Process a whitepaper from a local file.
+        
+        Args:
+            file_path: Path to the whitepaper file
+            startup_name: Name of the startup
+            keywords: Search keywords
+            formats: Accepted document formats
+            
+        Returns:
+            Raw data dictionary or None if processing fails
+        """
+        try:
+            logger.info(f"Processing whitepaper from file: {file_path}")
+            
+            # Determine document type
+            doc_type = 'unknown'
+            if file_path.lower().endswith('.pdf'):
+                doc_type = 'pdf'
+            elif file_path.lower().endswith('.txt'):
+                doc_type = 'txt'
+            elif file_path.lower().endswith('.html') or file_path.lower().endswith('.htm'):
+                doc_type = 'html'
+            
+            if doc_type not in formats:
+                logger.warning(f"Document type {doc_type} not in accepted formats: {formats}")
+                return None
+            
+            # Read content
+            try:
+                with open(file_path, 'rb') as f:
+                    content_bytes = f.read()
+            except Exception as e:
+                logger.error(f"Error reading file {file_path}: {str(e)}")
+                return None
+
+            content = {'content': content_bytes, 'content_type': doc_type}
+            
+            # Extract and clean text
+            processed_content = await self._extract_and_clean_text(content, doc_type)
+            if not processed_content:
+                return None
+            
+            # Analyze content structure and quality
+            analysis_result = self._analyze_whitepaper_content(processed_content, startup_name)
+            
+            return {
+                'url': f"file://{os.path.abspath(file_path)}",
+                'content': analysis_result['clean_text'],
+                'document_type': doc_type,
+                'sections': analysis_result['sections'],
+                'technical_terminology': analysis_result['terminology'],
+                'writing_quality': analysis_result['quality_metrics'],
+                'key_insights': analysis_result['insights'],
+                'collection_method': f'local_{doc_type}_processing',
+                'startup_name': startup_name,
+                'search_keywords': keywords
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing whitepaper from file {file_path}: {str(e)}")
+            return None
+
     async def _process_whitepaper_url(self, url: str, startup_name: str, keywords: List[str], formats: List[str]) -> Optional[Dict[str, Any]]:
         """
         Process a whitepaper from a URL.
